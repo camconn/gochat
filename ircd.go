@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "bytes"
+	"bytes"
 	"container/list"
 	"log"
 	"net"
@@ -54,6 +54,14 @@ func NewClient(connection net.Conn) Client {
 	return c
 }
 
+func NewEvent(cl *Client, raw string) *Event {
+	e := Event{
+		User: cl,
+	}
+
+	return &e
+}
+
 func networkHandler() {
 	listener, err := net.Listen("tcp", ":6667")
 
@@ -77,7 +85,31 @@ func networkHandler() {
 }
 
 func handleConnection(cl *Client, in chan string, events <-chan *Event) {
-	return
+	var bufferIn []byte
+	msgBuffer := make([]byte, 0)
+
+	for {
+		bufferIn = make([]byte, bufSize)
+		_, err := cl.Conn.Read(bufferIn)
+		if err != nil {
+			log.Println("Couldn't read client input: ", err)
+		}
+
+		// strip null chars
+		bufferIn = bytes.TrimRight(bufferIn, "\x00")
+
+		// append messages until the buffer ends in a newline
+		msgBuffer = append(msgBuffer, bufferIn...)
+		if !bytes.HasSuffix(msgBuffer, []byte(CRLF)) {
+			continue
+		}
+
+		for _, msg := range bytes.Split(msgBuffer[:len(msgBuffer)-2], []byte(CRLF)) {
+			if len(msg) > 0 {
+				events <- NewEvent(cl, msg)
+			}
+		}
+	}
 }
 
 func main() {
