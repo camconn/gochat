@@ -5,34 +5,23 @@ import (
 	"container/list"
 	"log"
 	"net"
+	"strings"
 )
 
 const bufSize = 1400
 const CRLF = "\x0D\x0A"
 
-type Event struct {
-	Addr net.Addr
-	Type int
-	User *Client
-	Body string
-}
-
-type Channel struct {
-	Name  string
-	Mode  string
-	Topic string
-	Users list.List
-}
-
 type Client struct {
-	Conn      net.Conn
-	Nick      string
-	Username  string
-	Type      int
-	LastSeen  int64
-	SendQueue list.List
-	Realname  string
-	Mode      string
+	Conn       net.Conn
+	Nick       string
+	Username   string
+	Type       int
+	LastSeen   int64
+	SendQueue  list.List
+	Realname   string
+	Mode       string
+	Alive      bool
+	Registered bool
 }
 
 type Message struct {
@@ -40,26 +29,24 @@ type Message struct {
 	User *Client
 }
 
-type Packet struct {
-	Target *Client
-	Text   string
+func (c *Client) sendMessage(message string) {
+	go func() {
+		c.Conn.Write([]byte(":" + message + CRLF))
+	}()
+}
+
+func (c *Client) String() string {
+	return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
 }
 
 func NewClient(connection net.Conn) Client {
 	log.Println("New client: ", connection.RemoteAddr().String())
 	c := Client{
-		Conn: connection,
+		Conn:  connection,
+		Alive: true,
 	}
 
 	return c
-}
-
-func NewEvent(cl *Client, raw string) *Event {
-	e := Event{
-		User: cl,
-	}
-
-	return &e
 }
 
 func networkHandler() {
@@ -71,7 +58,9 @@ func networkHandler() {
 
 	msgsIn := make(chan string)
 	events := make(chan *Event)
-	// packets := make(chan *Packet)
+
+	go eventHandler(events)
+	// TODO: Spawn Processor thread
 
 	for {
 		conn, err := listener.Accept()
@@ -84,11 +73,12 @@ func networkHandler() {
 	}
 }
 
-func handleConnection(cl *Client, in chan string, events <-chan *Event) {
+func handleConnection(cl *Client, in chan string, events chan<- *Event) {
 	var bufferIn []byte
 	msgBuffer := make([]byte, 0)
+	log.Println("Now handling new connection")
 
-	for {
+	for cl.Alive {
 		bufferIn = make([]byte, bufSize)
 		_, err := cl.Conn.Read(bufferIn)
 		if err != nil {
@@ -105,10 +95,15 @@ func handleConnection(cl *Client, in chan string, events <-chan *Event) {
 		}
 
 		for _, msg := range bytes.Split(msgBuffer[:len(msgBuffer)-2], []byte(CRLF)) {
-			if len(msg) > 0 {
-				events <- NewEvent(cl, msg)
+			// Go ahead and convert to strings while we're at it
+			l := len(msg)
+			if l > 0 {
+				msgString := string(msg[:l])
+				events <- NewEvent(cl, msgString)
 			}
 		}
+
+		msgBuffer = []byte{}
 	}
 }
 
