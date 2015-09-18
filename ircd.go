@@ -31,10 +31,14 @@ type Message struct {
 }
 
 func (c *Client) sendMessage(message string) {
+	c.sendRaw(":" + message)
+}
+
+func (c *Client) sendRaw(message string) {
 	go func() {
-		c.WriteLock.Lock() // Don't accidentally write two messages to same user at once
-		log.Println(":" + message)
-		c.Conn.Write([]byte(":" + message + CRLF))
+		c.WriteLock.Lock()
+		log.Println(message)
+		c.Conn.Write([]byte(message + CRLF))
 		c.WriteLock.Unlock()
 	}()
 }

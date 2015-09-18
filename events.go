@@ -21,6 +21,7 @@ const (
 	MOTD
 	QUIT
 	PART
+	PING
 	PASS
 	MSG
 	USER
@@ -55,6 +56,8 @@ func NewEvent(cl *Client, raw string) *Event {
 	switch command {
 	case "join":
 		e.Type = JOIN
+	case "motd":
+		e.Type = MOTD
 	case "nick":
 		e.Type = NICK
 
@@ -64,6 +67,16 @@ func NewEvent(cl *Client, raw string) *Event {
 			e.Valid = false
 			log.Println("Invalid nick command")
 		}
+	case "part":
+		e.Type = PART
+	case "pass":
+		e.Type = PASS
+	case "ping":
+		e.Type = PING
+	case "privmsg":
+		e.Type = MSG
+	case "quit":
+		e.Type = QUIT
 	case "user":
 		e.Type = USER
 
@@ -73,16 +86,6 @@ func NewEvent(cl *Client, raw string) *Event {
 			e.Valid = false
 			// TODO: Send invalid USER param code
 		}
-	case "quit":
-		e.Type = QUIT
-	case "part":
-		e.Type = PART
-	case "privmsg":
-		e.Type = MSG
-	case "pass":
-		e.Type = PASS
-	case "motd":
-		e.Type = MOTD
 	default:
 		e.Type = UNKNOWN
 	}
@@ -122,6 +125,9 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			}
 		case PART:
 			log.Println("Leave channel event")
+		case PING:
+			log.Println("Got PING, sending PONG")
+			e.Sender.sendRaw("PONG " + s.Hostname)
 		case MSG:
 			log.Println("Message event")
 		case MOTD:
