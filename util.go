@@ -11,12 +11,16 @@ import (
 
 const NEWLINE = "\n"
 const TIMEFORMAT = "Mon, Jan _2 2006 at 15:04:05 (MST)"
+const MOTD_LENGTH = 3000
 
 const (
 	RPL_WELCOME          = 001
 	RPL_YOURHOST         = 002
 	RPL_CREATED          = 003
 	RPL_MYINFO           = 004
+	RPL_MOTDSTART        = 375
+	RPL_MOTD             = 372
+	RPL_ENDOFMOTD        = 376
 	ERR_NOSUCHNICK       = 401
 	ERR_NOSUCHCHANNEL    = 403
 	ERR_CANNOTSENDTOCHAN = 404
@@ -76,11 +80,13 @@ func readMotd(s *ServerInfo, path string) {
 		log.Fatal("Invalid motd path: " + path)
 	}
 
-	var data []byte
+	data := make([]byte, MOTD_LENGTH)
 
 	_, err = f.Read(data)
 
-	motdRaw := string(data)
+	log.Println("MOTD is " + strconv.Itoa(len(data)) + " bytes long")
+
+	motdRaw := string(data[:len(data)])
 	data = []byte{} // go ahead and clean out byte array
 
 	s.MotdData = strings.Split(motdRaw, NEWLINE)
@@ -95,6 +101,17 @@ func (c *Client) sendWelcomeMessage(s *ServerInfo) {
 
 	infoStr := s.Hostname + strings.Join([]string{s.Hostname, VERSION, "+", "+"}, SPACE)
 	c.sendServerMessage(s, RPL_MYINFO, infoStr)
+
+	c.sendMotd(s)
+}
+
+func (c *Client) sendMotd(s *ServerInfo) {
+	c.sendServerMessage(s, RPL_MOTDSTART, "- "+s.Hostname+" message of the day")
+	for _, line := range s.MotdData {
+		c.sendServerMessage(s, RPL_MOTD, line)
+	}
+	c.sendServerMessage(s, RPL_ENDOFMOTD, "End of MOTD command")
+
 }
 
 // pad a numeric to a length of 3 characters

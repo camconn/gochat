@@ -18,6 +18,7 @@ const (
 	UNKNOWN = iota
 	JOIN
 	NICK
+	MOTD
 	QUIT
 	PART
 	PASS
@@ -80,6 +81,8 @@ func NewEvent(cl *Client, raw string) *Event {
 		e.Type = MSG
 	case "pass":
 		e.Type = PASS
+	case "motd":
+		e.Type = MOTD
 	default:
 		e.Type = UNKNOWN
 	}
@@ -121,6 +124,9 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			log.Println("Leave channel event")
 		case MSG:
 			log.Println("Message event")
+		case MOTD:
+			log.Println("MOTD event")
+			e.Sender.sendMotd(s)
 		case USER:
 			log.Println("User info event")
 
