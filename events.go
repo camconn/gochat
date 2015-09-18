@@ -87,7 +87,7 @@ func NewEvent(cl *Client, raw string) *Event {
 	return &e
 }
 
-func eventHandler(events <-chan *Event) {
+func eventHandler(s *ServerInfo, events <-chan *Event) {
 	// channels := make(map[string]*Channel)
 	users := make(map[string]*Client)
 
@@ -136,8 +136,7 @@ func eventHandler(events <-chan *Event) {
 
 					log.Println("User information registered for", e.Sender.Realname)
 
-					// TODO: Send user welcome message
-					log.Println("User string testing", e.Sender.String())
+					e.Sender.sendWelcomeMessage(s)
 				} else {
 					// TODO: Send INVALID error
 				}

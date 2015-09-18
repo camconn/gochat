@@ -2,14 +2,15 @@ package main
 
 import (
 	"bytes"
-	"container/list"
 	"log"
 	"net"
 	"strings"
+	"sync"
 )
 
 const bufSize = 1400
 const CRLF = "\x0D\x0A"
+const VERSION = "0.0.1-alpha"
 
 type Client struct {
 	Conn       net.Conn
@@ -17,7 +18,7 @@ type Client struct {
 	Username   string
 	Type       int
 	LastSeen   int64
-	SendQueue  list.List
+	WriteLock  *sync.Mutex
 	Realname   string
 	Mode       string
 	Alive      bool
@@ -31,8 +32,15 @@ type Message struct {
 
 func (c *Client) sendMessage(message string) {
 	go func() {
+		c.WriteLock.Lock() // Don't accidentally write two messages to same user at once
+		log.Println(":" + message)
 		c.Conn.Write([]byte(":" + message + CRLF))
+		c.WriteLock.Unlock()
 	}()
+}
+
+func (c *Client) sendServerMessage(s *ServerInfo, numeric int, message string) {
+	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " :" + message)
 }
 
 func (c *Client) String() string {
@@ -42,14 +50,15 @@ func (c *Client) String() string {
 func NewClient(connection net.Conn) Client {
 	log.Println("New client: ", connection.RemoteAddr().String())
 	c := Client{
-		Conn:  connection,
-		Alive: true,
+		Conn:      connection,
+		Alive:     true,
+		WriteLock: &sync.Mutex{},
 	}
 
 	return c
 }
 
-func networkHandler() {
+func networkHandler(s *ServerInfo) {
 	listener, err := net.Listen("tcp", ":6667")
 
 	if err != nil {
@@ -59,7 +68,7 @@ func networkHandler() {
 	msgsIn := make(chan string)
 	events := make(chan *Event)
 
-	go eventHandler(events)
+	go eventHandler(s, events)
 	// TODO: Spawn Processor thread
 
 	for {
@@ -82,7 +91,10 @@ func handleConnection(cl *Client, in chan string, events chan<- *Event) {
 		bufferIn = make([]byte, bufSize)
 		_, err := cl.Conn.Read(bufferIn)
 		if err != nil {
-			log.Println("Couldn't read client input: ", err)
+			// TODO: Send quit event and close associated user resources
+			// log.Println("Couldn't read client input: ", err)
+			cl.Alive = false
+			break
 		}
 
 		// strip null chars
@@ -110,7 +122,7 @@ func handleConnection(cl *Client, in chan string, events chan<- *Event) {
 func main() {
 	log.Println("Starting Server")
 
-	// TODO: Load configuration from file
+	conf := loadConfig()
 
-	networkHandler()
+	networkHandler(conf)
 }
