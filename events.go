@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 )
 
@@ -35,6 +36,9 @@ const COLON = ":"
 const COMMA = ","
 
 // Create a new Event from a sending client and the raw command string
+// The sole purpose of this function is the create an Event object and
+// specify the proper body, target, and do a simple preliminary check of
+// if the Event message is valid.
 func NewEvent(cl *Client, raw string) *Event {
 	e := Event{
 		Type:   UNKNOWN,
@@ -42,6 +46,11 @@ func NewEvent(cl *Client, raw string) *Event {
 		Target: "",
 		Body:   "",
 		Valid:  true,
+	}
+
+	// if raw == "", a blank event is made
+	if raw == "" {
+		return &e
 	}
 
 	log.Println(raw)
@@ -53,6 +62,8 @@ func NewEvent(cl *Client, raw string) *Event {
 
 	if len(words) >= 2 {
 		command = strings.ToLower(words[0])
+	} else if len(words) == 1 {
+		command = strings.ToLower(raw)
 	}
 
 	fmt.Printf("Words: %v\n", words)
@@ -80,7 +91,6 @@ func NewEvent(cl *Client, raw string) *Event {
 			e.Body = strings.Trim(words[1], SPACE)
 		} else {
 			e.Valid = false
-			log.Println("Invalid nick command")
 		}
 	case "part":
 		e.Type = PART
@@ -95,6 +105,16 @@ func NewEvent(cl *Client, raw string) *Event {
 		e.Type = PING
 	case "privmsg":
 		e.Type = MSG
+		fmt.Printf("Private message: %s\n", raw[start:])
+		targetMessagePair := strings.SplitAfterN(raw[start:], COLON, 2)
+
+		if len(targetMessagePair) != 2 {
+			e.Valid = false
+			break
+		}
+
+		e.Target = strings.Trim(targetMessagePair[0], COLON+SPACE)
+		e.Body = strings.Trim(targetMessagePair[1], COLON+SPACE)
 	case "quit":
 		e.Type = QUIT
 	case "user":
@@ -137,7 +157,6 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 				chans := strings.Split(chanPassPair[0], COMMA)
 				// keys := strings.Split(chanPassPair[1], COMMA)
 
-				// TODO: Check if channel name starts with # or &
 				for _, v := range chans {
 					v := strings.Trim(v, SPACE)
 
@@ -147,6 +166,20 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 						log.Println("Invalid channel name", v)
 						e.Sender.sendServerMessage(s, ERR_NOSUCHCHANNEL, "The channel \""+v+"\" does not exist")
 						continue
+					}
+
+					// check if user is already in channel
+					if len(e.Sender.Channels) > 0 {
+						i := binarySearch(v, e.Sender.Channels)
+
+						// Do nothing, the user is already in this channel
+						if i != -1 {
+							continue
+						} else {
+							e.Sender.Channels = append(e.Sender.Channels, v)
+							sort.Strings(e.Sender.Channels)
+							log.Println("Adding user to channel", v)
+						}
 					}
 
 					if c, exists := channels[v]; exists {
@@ -160,25 +193,30 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 					e.Sender.sendServerChannelInfo(s, RPL_TOPIC, v, channels[v].Topic)
 					channels[v].sendEvent(e.Sender, "JOIN", "")
+					channels[v].nameReply(s, e.Sender)
 				}
 			}
 		case MODE:
 			log.Println("Mode event")
 			fmt.Printf("e.Body: %s\n", e.Body)
 
-			e.Sender.sendServerChannelInfo
+			// e.Sender.sendServerChannelInfo
 		case NICK:
+			// TODO: check if selected nick is valid
 			log.Println("User nick event")
 
 			n := e.Body
 
-			_, exists := users[n]
+			u, exists := users[n]
 
 			if exists {
 				log.Println("User already exists!")
+				e.Sender.sendServerMessage(s, ERR_NICKNAMEINUSE, "Nickname is already in use.")
 			} else {
 				if e.Sender.Nick != "" {
 					log.Println("User changed their nickname to", n)
+					delete(users, n)
+					users[n] = u
 				} else { // User is connecting for first time
 					log.Println("New user: ", n)
 					users[n] = e.Sender
@@ -204,6 +242,14 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			e.Sender.sendRaw("PONG " + s.Hostname)
 		case MSG:
 			log.Println("Message event")
+
+			// TODO: Check if PRIVMSG is being sent to a user
+			if c, exists := channels[e.Target]; exists {
+				// TODO: Check if user has joined channel
+				c.sendEvent(e.Sender, "PRIVMSG", e.Body)
+			} else {
+				e.Sender.sendServerMessage(s, ERR_CANNOTSENDTOCHAN, "Cannot send to channel")
+			}
 		case MOTD:
 			log.Println("MOTD event")
 			e.Sender.sendMotd(s)
@@ -233,11 +279,17 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			}
 		case QUIT:
 			log.Println("User quit event from ", e.Sender.Nick)
+
+			// close connections
+			e.Sender.Conn.Close()
+
+			// remove user from users map
 			delete(users, e.Sender.Nick)
 
-			// TODO: Send quit event to users in all common channels
+			// TODO: remove user from all participating channels
 		case UNKNOWN:
 		default:
+			e.Sender.sendServerMessage(s, ERR_UNKNOWNCOMMAND, "Unknown command")
 			log.Println("lol, don't know what type of event this is!")
 		}
 	}

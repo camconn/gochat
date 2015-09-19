@@ -15,6 +15,7 @@ const VERSION = "0.0.1-alpha"
 type Client struct {
 	Conn       net.Conn
 	Cloak      string
+	Channels   []string
 	Nick       string
 	Username   string
 	Type       int
@@ -83,7 +84,6 @@ func networkHandler(s *ServerInfo) {
 	events := make(chan *Event)
 
 	go eventHandler(s, events)
-	// TODO: Spawn Processor thread
 
 	for {
 		conn, err := listener.Accept()
@@ -111,9 +111,11 @@ func handleConnection(cl *Client, in chan string, events chan<- *Event) {
 		bufferIn = make([]byte, bufSize)
 		_, err := cl.Conn.Read(bufferIn)
 		if err != nil {
-			// TODO: Send quit event and close associated user resources
-			// log.Println("Couldn't read client input: ", err)
+			log.Println("User" + cl.String() + "disconnected")
 			cl.Alive = false
+			e := NewEvent(cl, "")
+			e.Type = QUIT
+			events <- e
 			break
 		}
 
