@@ -18,6 +18,9 @@ const (
 	RPL_YOURHOST         = 002
 	RPL_CREATED          = 003
 	RPL_MYINFO           = 004
+	RPL_CHANNELMODEIS    = 324
+	RPL_TOPIC            = 332
+	RPL_NAMREPLY         = 353
 	RPL_MOTDSTART        = 375
 	RPL_MOTD             = 372
 	RPL_ENDOFMOTD        = 376
@@ -27,13 +30,15 @@ const (
 	ERR_TOOMANYCHANNELS  = 405
 	ERR_WASNOSUCHNICK    = 406
 	ERR_TOOMANYTARGETS   = 407
+	ERR_NOTONCHANNEL     = 442
 )
 
 type ServerInfo struct {
-	Hostname string
-	Network  string
-	MotdData []string
-	started  *time.Time
+	Hostname     string
+	Network      string
+	MotdData     []string
+	DefaultCloak string
+	started      *time.Time
 }
 
 // Reader server info from file and load it
@@ -61,6 +66,8 @@ func loadConfig() *ServerInfo {
 	if len(serverConfig.Network) == 0 {
 		log.Fatal("Invalid \"network\" key in [server]")
 	}
+
+	serverConfig.DefaultCloak = strings.Trim(serverSec.Key("defaultcloak").String(), SPACE)
 
 	motdPath := serverSec.Key("motd").String()
 	if len(motdPath) == 0 {

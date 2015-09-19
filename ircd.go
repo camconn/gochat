@@ -14,6 +14,7 @@ const VERSION = "0.0.1-alpha"
 
 type Client struct {
 	Conn       net.Conn
+	Cloak      string
 	Nick       string
 	Username   string
 	Type       int
@@ -47,14 +48,23 @@ func (c *Client) sendServerMessage(s *ServerInfo, numeric int, message string) {
 	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " :" + message)
 }
 
+func (c *Client) sendServerChannelInfo(s *ServerInfo, numeric int, channel, message string) {
+	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " " + channel + " :" + message)
+}
+
 func (c *Client) String() string {
-	return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
+	if len(c.Cloak) > 0 {
+		return c.Nick + "!" + c.Username + "@" + c.Cloak
+	} else {
+		return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
+	}
 }
 
 func NewClient(connection net.Conn) Client {
 	log.Println("New client: ", connection.RemoteAddr().String())
 	c := Client{
 		Conn:      connection,
+		Cloak:     "",
 		Alive:     true,
 		WriteLock: &sync.Mutex{},
 	}
@@ -82,6 +92,12 @@ func networkHandler(s *ServerInfo) {
 		}
 
 		cl := NewClient(conn)
+
+		// cloak user is there is a default cloak
+		if len(s.DefaultCloak) > 0 {
+			cl.Cloak = s.DefaultCloak
+		}
+
 		go handleConnection(&cl, msgsIn, events)
 	}
 }
