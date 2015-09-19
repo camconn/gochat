@@ -21,6 +21,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -158,6 +159,10 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 	channels := make(map[string]*Channel)
 	users := make(map[string]*Client)
 
+	// Match Alphanumeric for first character, and Alphanumeric along with: .[]()-
+	// Max nick length: 16 characters
+	nickRegex, _ := regexp.Compile("^[A-Za-z0-9]([A-Za-z0-9\\.\\[\\]\\(\\)\\-]){0,15}$")
+
 	for {
 		e := <-events
 		fmt.Printf("Got event %v\n", e)
@@ -221,10 +226,14 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 			// e.Sender.sendServerChannelInfo
 		case NICK:
-			// TODO: check if selected nick is valid
 			log.Println("User nick event")
 
 			n := e.Body
+
+			if !nickRegex.MatchString(n) {
+				e.Sender.sendServerMessage(s, ERR_ERRONEUSNICKNAME, "Erroneus nickname.")
+				continue
+			}
 
 			u, exists := users[n]
 
