@@ -34,7 +34,7 @@ func TestBinarySearch(t *testing.T) {
 	}
 
 	if !testEq(results1, knowns1) {
-		t.Fail()
+		t.Error("Bad binary search")
 	}
 
 	set2 := []string{"b", "d", "e", "f", "g"}
@@ -46,7 +46,7 @@ func TestBinarySearch(t *testing.T) {
 	}
 
 	if !testEq(results2, knowns2) {
-		t.Fail()
+		t.Error("Bad binary search")
 	}
 
 	set3 := []string{"b"}
@@ -58,7 +58,7 @@ func TestBinarySearch(t *testing.T) {
 	}
 
 	if !testEq(results3, knowns3) {
-		t.Fail()
+		t.Error("Bad binary search")
 	}
 
 }
@@ -83,4 +83,19 @@ func testEq(a, b []int) bool {
 	}
 
 	return true
+}
+
+// Tests only positive numerics. Negative numerics are undefined behavior.
+func TestNumericPad(t *testing.T) {
+	if padNumeric(1) != "001" {
+		t.Error("Bad numeric padding")
+	}
+
+	if padNumeric(42) != "042" {
+		t.Error("Bad numeric padding")
+	}
+
+	if padNumeric(256) != "256" {
+		t.Error("Bad numeric padding")
+	}
 }
