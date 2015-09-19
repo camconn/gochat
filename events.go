@@ -54,6 +54,10 @@ const SPACE = " "
 const COLON = ":"
 const COMMA = ","
 
+// Match Alphanumeric for first character, and Alphanumeric along with: .[]()-
+// Max nick length: 16 characters
+const NICKREGEX = "^[A-Za-z0-9]([A-Za-z0-9\\.\\[\\]\\(\\)\\-]){0,15}$"
+
 // Create a new Event from a sending client and the raw command string
 // The sole purpose of this function is the create an Event object and
 // specify the proper body, target, and do a simple preliminary check of
@@ -159,9 +163,7 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 	channels := make(map[string]*Channel)
 	users := make(map[string]*Client)
 
-	// Match Alphanumeric for first character, and Alphanumeric along with: .[]()-
-	// Max nick length: 16 characters
-	nickRegex, _ := regexp.Compile("^[A-Za-z0-9]([A-Za-z0-9\\.\\[\\]\\(\\)\\-]){0,15}$")
+	nickRegex, _ := regexp.Compile(NICKREGEX)
 
 	for {
 		e := <-events
