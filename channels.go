@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"log"
 	"strings"
+	"time"
 )
 
 type Channel struct {
@@ -21,7 +22,7 @@ func NewChannel(name string) *Channel {
 		Mode:    "+",
 		Topic:   "Default Topic",
 		Users:   list.New(),
-		Created: 0,
+		Created: time.Now().Unix(),
 	}
 
 	log.Println("Creating new channel: " + name)
@@ -68,7 +69,8 @@ func (ch *Channel) sendEvent(sender *Client, action, message string) {
 	}
 }
 
-// Send list of users in channel to recipient
+// Send list of users in channel to recipient. This uses the
+// RPL_NAMREPLY numeric code.
 func (ch *Channel) nameReply(s *ServerInfo, recipient *Client) {
 	users := []string{}
 	for u := ch.Users.Front(); u != nil; u = u.Next() {

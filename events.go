@@ -197,6 +197,7 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 				}
 			}
 		case MODE:
+			// TODO: WTF does this even do?
 			log.Println("Mode event")
 			fmt.Printf("e.Body: %s\n", e.Body)
 
