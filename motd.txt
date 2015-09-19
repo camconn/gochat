@@ -5,12 +5,12 @@
 #   \ V  V /  __/ | (_| (_) | | | | | |  __/_|  #
 #    \_/\_/ \___|_|\___\___/|_| |_| |_|\___(_)  #
 #                                               #
-#     You are running a default ircd instance.  #
+#     You are running a default gochat config.  #
 # You can change this message by modifying your #
 # copy of `motd.txt`, or by specifiying another #
 # file in your configuration, which is found in #
 # `config.ini`.                                 #
 #                                               #
-#               https://github.com/camconn/ircd #
-#                      ircd Version 0.0.1-alpha #
+#             https://github.com/camconn/gochat #
+#                    gochat Version 0.0.1-alpha #
 #################################################

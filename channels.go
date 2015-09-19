@@ -1,5 +1,5 @@
 /*
-ircd -- A light and speedy IRC server.
+gochat -- A light and speedy IRC server.
 Copyright (C) 2015 Cameron Conn <cam_at_camconn_dot_cc>
 
 This program is free software: you can redistribute it and/or modify
