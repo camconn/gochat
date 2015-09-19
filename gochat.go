@@ -45,11 +45,6 @@ type Client struct {
 	Registered bool
 }
 
-type Message struct {
-	Text string
-	User *Client
-}
-
 func (c *Client) sendMessage(message string) {
 	c.sendRaw(":" + message)
 }
@@ -75,8 +70,12 @@ func (c *Client) String() string {
 	if len(c.Cloak) > 0 {
 		return c.Nick + "!" + c.Username + "@" + c.Cloak
 	} else {
-		return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
+		return c.NoCloakString()
 	}
+}
+
+func (c *Client) NoCloakString() string {
+	return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
 }
 
 func NewClient(connection net.Conn) Client {
