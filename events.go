@@ -163,6 +163,12 @@ func NewEvent(cl *Client, raw string) *Event {
 		e.Body = strings.Trim(targetMessagePair[1], COLON+SPACE)
 	case "quit":
 		e.Type = QUIT
+
+		pair := strings.SplitAfterN(raw[start:], COLON, 2)
+
+		if len(pair) == 2 {
+			e.Body = strings.Trim(pair[1], COLON+SPACE)
+		}
 	case "user":
 		e.Type = USER
 		log.Println("User received")
@@ -351,14 +357,17 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			// close connections
 			e.Sender.Conn.Close()
 
+			for _, ch := range channels {
+				ch.sendEvent(e.Sender, "QUIT", e.Body)
+				ch.removeUser(e.Sender.Nick)
+			}
+
 			// remove user from users map
 			delete(users, e.Sender.Nick)
-
-			// TODO: remove user from all participating channels
 		case UNKNOWN:
 		default:
 			e.Sender.sendServerMessage(s, ERR_UNKNOWNCOMMAND, "Unknown command")
-			log.Println("lol, don't know what type of event this is!")
+			log.Println("UNKNOWN event type.")
 		}
 	}
 }
