@@ -66,11 +66,12 @@ type ServerInfo struct {
 // of the string if found. Returns -1 if not found
 // NB: To use this function, the array must be sorted
 func binarySearch(term string, space []string) int {
+	// fmt.Printf("Array: %v\nSearch term: %s\n", space, term)
 	start := 0
 	end := len(space) - 1
-	mid := (start + end) / 2
 
 	for {
+		mid := (int)((start + end) / 2)
 		// fmt.Printf("New indexes ==> start: %d || mid: %d || end: %d\n", start, mid, end)
 		result := compareString(term, space[mid])
 
@@ -91,8 +92,6 @@ func binarySearch(term string, space []string) int {
 		if start >= mid && mid >= end {
 			return -1
 		}
-
-		mid = start + (end-start)/2
 	}
 	return -1
 }
