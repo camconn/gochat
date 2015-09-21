@@ -124,7 +124,10 @@ func NewEvent(cl *Client, raw string) *Event {
 		chanReasonPair := strings.SplitAfterN(raw[start:], COLON, 2)
 
 		e.Target = strings.Trim(chanReasonPair[0], COLON+SPACE) // comma-separated list of channels
-		e.Body = strings.Trim(chanReasonPair[1], COLON+SPACE)   // leave reason
+
+		if len(chanReasonPair) == 2 {
+			e.Body = strings.Trim(chanReasonPair[1], COLON+SPACE) // leave reason
+		}
 	case "pass":
 		e.Type = PASS
 	case "ping":
@@ -218,13 +221,15 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 						i := binarySearch(v, e.Sender.Channels)
 
 						// Do nothing, the user is already in this channel
-						if i != -1 {
+						if i == -1 {
 							continue
 						} else {
 							e.Sender.Channels = append(e.Sender.Channels, v)
 							sort.Strings(e.Sender.Channels)
 							log.Println("Adding user to channel", v)
 						}
+					} else {
+						e.Sender.Channels = append(e.Sender.Channels, v)
 					}
 
 					if c, exists := channels[v]; exists {
@@ -282,7 +287,11 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 			for _, ch := range chans {
 				if partedChannel, exists := channels[ch]; exists {
-					partedChannel.sendEvent(e.Sender, "PART", reason)
+					if binarySearch(ch, e.Sender.Channels) != -1 {
+						partedChannel.sendEvent(e.Sender, "PART", reason)
+					} else {
+						e.Sender.sendServerMessage(s, ERR_NOTONCHANNEL, "You can't leave a channel you aren't in.")
+					}
 				} else {
 					e.Sender.sendServerMessage(s, ERR_NOSUCHCHANNEL, "That channel does not exist")
 				}
@@ -290,13 +299,13 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 		case PING:
 			log.Println("Got PING, sending PONG")
 
-			e.Sender.sendRaw(":PONG " + s.Hostname)
-		case PONG:
-			log.Println("Got PONG")
+			e.Sender.LastSeen = time.Now().Unix()
 
 			if len(e.Body) > 0 {
-				e.Sender.LastSeen = time.Now().Unix()
+				e.Sender.sendRaw("PONG " + s.Hostname + " :" + e.Body)
 			}
+		case PONG:
+			log.Println("Got PONG")
 		case MSG:
 			log.Println("Message event")
 

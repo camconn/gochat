@@ -77,7 +77,7 @@ func (ch *Channel) sendToUsers(message string) {
 // appended to the end
 func (ch *Channel) sendEvent(sender *Client, action, message string) {
 	for user := ch.Users.Front(); user != nil; user = user.Next() {
-		if c, ok := (user.Value).(*Client); ok && (c != sender || action == "JOIN") {
+		if c, ok := (user.Value).(*Client); ok && !(c == sender && action == "PRIVMSG") {
 			if len(message) > 0 {
 				c.sendRaw(":" + sender.String() + " " + action + " " + ch.Name + " :" + message)
 			} else {

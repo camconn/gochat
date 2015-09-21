@@ -70,6 +70,10 @@ func binarySearch(term string, space []string) int {
 	start := 0
 	end := len(space) - 1
 
+	if len(space) == 0 {
+		return -1
+	}
+
 	for {
 		mid := (int)((start + end) / 2)
 		// fmt.Printf("New indexes ==> start: %d || mid: %d || end: %d\n", start, mid, end)
