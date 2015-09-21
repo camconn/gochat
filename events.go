@@ -50,6 +50,7 @@ const (
 	PONG
 	QUIT
 	REGISTERED
+	TOPIC
 	USER
 )
 
@@ -168,6 +169,20 @@ func NewEvent(cl *Client, raw string) *Event {
 
 		if len(pair) == 2 {
 			e.Body = strings.Trim(pair[1], COLON+SPACE)
+		}
+	case "topic":
+		e.Type = TOPIC
+
+		if len(words) == 3 || len(words) == 2 {
+			e.Target = words[1]
+			pair := strings.SplitAfterN(raw, COLON, 2)
+
+			if len(pair) == 2 {
+				e.Body = pair[1]
+			}
+			// else: blank topic
+		} else {
+			e.Valid = false
 		}
 	case "user":
 		e.Type = USER
@@ -325,6 +340,27 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 		case MOTD:
 			log.Println("MOTD event")
 			e.Sender.sendMotd(s)
+		case TOPIC:
+			// TODO: Check if user has permission to change topic
+			log.Println("TOPIC event")
+
+			if !e.Valid {
+				// TODO: Send bad command text
+			}
+
+			if ch, exists := channels[e.Target]; exists {
+				ch.Topic = e.Body
+
+				// hack to force sendEvent to display empty topic
+				if e.Body == "" {
+					e.Body = " "
+				}
+
+				ch.sendEvent(e.Sender, "TOPIC", e.Body)
+				// send topic change message now
+			} else {
+				e.Sender.sendServerMessage(s, ERR_NOSUCHCHANNEL, e.Target+": No such channel")
+			}
 		case USER:
 			log.Println("User info event")
 
