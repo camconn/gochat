@@ -29,7 +29,6 @@ import (
 
 const NEWLINE = "\n"
 const TIMEFORMAT = "Mon, Jan _2 2006 at 15:04:05 (MST)"
-const MOTD_LENGTH = 3000
 
 const (
 	RPL_WELCOME          = 001
@@ -153,12 +152,19 @@ func loadConfig() *ServerInfo {
 // read motd from file and write data to ServerInfo
 func readMotd(s *ServerInfo, path string) {
 	f, err := os.Open(path)
+	defer f.Close()
 
 	if err != nil {
 		log.Fatal("Invalid motd path: " + path)
 	}
 
-	data := make([]byte, MOTD_LENGTH)
+	fInfo, err := f.Stat()
+	if err != nil {
+		log.Fatal("Not able to load information about MOTD file")
+	}
+
+	fSize := fInfo.Size()
+	data := make([]byte, fSize)
 
 	_, err = f.Read(data)
 

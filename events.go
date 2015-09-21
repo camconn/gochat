@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 type Event struct {
@@ -36,18 +37,20 @@ type Event struct {
 
 const (
 	UNKNOWN = iota
-	JOIN
-	NICK
-	MOTD
-	MODE
-	QUIT
-	PART
-	PING
-	PASS
-	MSG
-	USER
+
 	CONNECT
+	JOIN
+	MODE
+	MOTD
+	MSG
+	NICK
+	PART
+	PASS
+	PING
+	PONG
+	QUIT
 	REGISTERED
+	USER
 )
 
 const SPACE = " "
@@ -126,6 +129,23 @@ func NewEvent(cl *Client, raw string) *Event {
 		e.Type = PASS
 	case "ping":
 		e.Type = PING
+		pair := strings.Split(raw, SPACE)
+
+		if len(pair) == 2 {
+			e.Body = strings.Trim(pair[1], COLON+SPACE)
+		}
+	case "pong":
+		e.Type = PONG
+		words := strings.Split(raw, SPACE)
+
+		l := len(words)
+		if l >= 2 {
+			lagStr := strings.Trim(words[l-1], COLON+SPACE)
+
+			if len(lagStr) >= 16 {
+				e.Body = "Y"
+			}
+		}
 	case "privmsg":
 		e.Type = MSG
 		fmt.Printf("Private message: %s\n", raw[start:])
@@ -269,7 +289,14 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			}
 		case PING:
 			log.Println("Got PING, sending PONG")
-			e.Sender.sendRaw("PONG " + s.Hostname)
+
+			e.Sender.sendRaw(":PONG " + s.Hostname)
+		case PONG:
+			log.Println("Got PONG")
+
+			if len(e.Body) > 0 {
+				e.Sender.LastSeen = time.Now().Unix()
+			}
 		case MSG:
 			log.Println("Message event")
 
@@ -298,7 +325,9 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 					log.Println("User information registered for", e.Sender.Realname)
 
+					e.Sender.Ping(s)
 					e.Sender.sendWelcomeMessage(s)
+
 				} else {
 					// TODO: Send INVALID error
 					log.Println("Invalid USER command")

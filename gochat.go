@@ -37,7 +37,7 @@ type Client struct {
 	Nick       string
 	Username   string
 	Type       int
-	LastSeen   int64
+	LastSeen   int64 // TODO: Update on PINGs, PRIVMSG, JOIN, etc.
 	WriteLock  *sync.Mutex
 	Realname   string
 	Mode       string
