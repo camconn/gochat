@@ -28,7 +28,7 @@ import (
 
 const bufSize = 1400
 const CRLF = "\x0D\x0A"
-const VERSION = "0.0.1-alpha"
+const VERSION = "0.0.2-alpha"
 
 type Client struct {
 	Conn       net.Conn
