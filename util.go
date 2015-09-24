@@ -35,6 +35,7 @@ const (
 	RPL_YOURHOST         = 002
 	RPL_CREATED          = 003
 	RPL_MYINFO           = 004
+	RPL_ISUPPORT         = 005
 	RPL_CHANNELMODEIS    = 324
 	RPL_TOPIC            = 332
 	RPL_NAMREPLY         = 353
@@ -190,7 +191,20 @@ func (c *Client) sendWelcomeMessage(s *ServerInfo) {
 	infoStr := s.Hostname + strings.Join([]string{s.Hostname, VERSION, "+", "+"}, SPACE)
 	c.sendServerMessage(s, RPL_MYINFO, infoStr)
 
+	c.sendServerMessage(s, RPL_ISUPPORT, iSupport(s))
+
 	c.sendMotd(s)
+}
+
+// Generate ISUPPORT string
+func iSupport(s *ServerInfo) string {
+	supports := "CASEMAPPING NICKLEN=16"
+
+	supports += " NETWORK=" + s.Network
+
+	// TODO: Dynamically add on for MAXCHANNELS, MODES, etc.
+
+	return supports
 }
 
 func (c *Client) sendMotd(s *ServerInfo) {
