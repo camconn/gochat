@@ -333,12 +333,24 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 		case MSG:
 			log.Println("Message event")
 
-			// TODO: Check if PRIVMSG is being sent to a user
-			if c, exists := channels[e.Target]; exists {
-				// TODO: Check if user has joined channel
-				c.sendEvent(e.Sender, "PRIVMSG", e.Body)
-			} else {
-				e.Sender.sendServerMessage(s, ERR_CANNOTSENDTOCHAN, "Cannot send to channel")
+			l := len(e.Target)
+
+			if l > 1 && (e.Target[0] == '#' || e.Target[0] == '&') { // sending to channel
+				if c, exists := channels[e.Target]; exists {
+					// TODO: Check if user has joined channel
+					c.sendEvent(e.Sender, "PRIVMSG", e.Body)
+				} else {
+					e.Sender.sendServerMessage(s, ERR_CANNOTSENDTOCHAN, "Cannot send to channel")
+				}
+			} else if l > 1 { // sending to user
+				if user, exists := users[e.Target]; exists {
+					user.sendMessage(e.Sender.Nick + " PRIVMSG " + user.Nick + " :" + e.Body)
+				} else {
+					// TODO: Send properly formatted ERR_NOSUCHNICK message
+					e.Sender.sendServerMessage(s, ERR_NOSUCHNICK, "No suck nick/channel")
+				}
+			} else { // invalid target
+				e.Sender.sendServerMessage(s, ERR_NORECIPIENT, "No recipient given (PRIVMSG)")
 			}
 		case MOTD:
 			log.Println("MOTD event")
