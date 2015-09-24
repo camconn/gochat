@@ -38,6 +38,7 @@ const (
 	RPL_ISUPPORT         = 005
 	RPL_UMODEIS          = 221
 	RPL_CHANNELMODEIS    = 324
+	RPL_NOTOPIC          = 331
 	RPL_TOPIC            = 332
 	RPL_NAMREPLY         = 353
 	RPL_ENDOFNAMES       = 366

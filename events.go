@@ -262,8 +262,13 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 						channels[v].Users.PushBack(e.Sender)
 					}
 
-					e.Sender.sendServerTargetInfo(s, RPL_TOPIC, v, channels[v].Topic)
 					channels[v].sendEvent(e.Sender, "JOIN", "")
+
+					if len(channels[v].Topic) > 0 {
+						e.Sender.sendServerTargetInfo(s, RPL_TOPIC, v, channels[v].Topic)
+					} else {
+						e.Sender.sendServerTargetInfo(s, RPL_NOTOPIC, v, "No topic is set")
+					}
 					channels[v].nameReply(s, e.Sender)
 				}
 			}
@@ -414,13 +419,7 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			if ch, exists := channels[e.Target]; exists {
 				ch.Topic = e.Body
 
-				// hack to force sendEvent to display empty topic
-				if e.Body == "" {
-					e.Body = " "
-				}
-
 				ch.sendEvent(e.Sender, "TOPIC", e.Body)
-				// send topic change message now
 			} else {
 				e.Sender.sendServerMessage(s, ERR_NOSUCHCHANNEL, e.Target+": No such channel")
 			}

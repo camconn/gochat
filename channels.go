@@ -82,7 +82,7 @@ func (ch *Channel) sendToUsers(message string) {
 func (ch *Channel) sendEvent(sender *Client, action, message string) {
 	for user := ch.Users.Front(); user != nil; user = user.Next() {
 		if c, ok := (user.Value).(*Client); ok && !(c == sender && action == "PRIVMSG") {
-			if len(message) > 0 {
+			if message != "" {
 				c.sendRaw(":" + sender.String() + " " + action + " " + ch.Name + " :" + message)
 			} else {
 				c.sendRaw(":" + sender.String() + " " + action + " " + ch.Name)
