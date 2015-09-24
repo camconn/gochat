@@ -58,12 +58,16 @@ func (c *Client) sendRaw(message string) {
 	}()
 }
 
+// Send a simple server numeric message in the format of
+// :HOSTNAME 123 USERNICK :MESSAGE
 func (c *Client) sendServerMessage(s *ServerInfo, numeric int, message string) {
 	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " :" + message)
 }
 
-func (c *Client) sendServerChannelInfo(s *ServerInfo, numeric int, channel, message string) {
-	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " " + channel + " :" + message)
+// Send a user information (such as a topic, user list, or ERR_NOSUCHNICK error) about a
+// target, which can be either a Channel, Nickname, or Server
+func (c *Client) sendServerTargetInfo(s *ServerInfo, numeric int, target, message string) {
+	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " " + target + " :" + message)
 }
 
 func (c *Client) String() string {
@@ -74,6 +78,7 @@ func (c *Client) String() string {
 	}
 }
 
+// Print out a user's nick, username, and host exposing personally-identifiable information
 func (c *Client) NoCloakString() string {
 	return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
 }

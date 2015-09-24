@@ -262,7 +262,7 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 						channels[v].Users.PushBack(e.Sender)
 					}
 
-					e.Sender.sendServerChannelInfo(s, RPL_TOPIC, v, channels[v].Topic)
+					e.Sender.sendServerTargetInfo(s, RPL_TOPIC, v, channels[v].Topic)
 					channels[v].sendEvent(e.Sender, "JOIN", "")
 					channels[v].nameReply(s, e.Sender)
 				}
@@ -271,8 +271,6 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			// TODO: WTF does this even do?
 			log.Println("Mode event")
 			fmt.Printf("e.Body: %s\n", e.Body)
-
-			// e.Sender.sendServerChannelInfo
 		case NICK:
 			log.Println("User nick event")
 

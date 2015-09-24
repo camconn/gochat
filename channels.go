@@ -103,11 +103,11 @@ func (ch *Channel) nameReply(s *ServerInfo, recipient *Client) {
 	for i := 0; end < len(users); i += 8 {
 		end += 8
 		if end > len(users) {
-			recipient.sendServerChannelInfo(s, RPL_NAMREPLY, "= "+ch.Name, strings.Join(users[i:], SPACE))
+			recipient.sendServerTargetInfo(s, RPL_NAMREPLY, "= "+ch.Name, strings.Join(users[i:], SPACE))
 		} else {
-			recipient.sendServerChannelInfo(s, RPL_NAMREPLY, "= "+ch.Name, strings.Join(users[i:end], SPACE))
+			recipient.sendServerTargetInfo(s, RPL_NAMREPLY, "= "+ch.Name, strings.Join(users[i:end], SPACE))
 		}
 	}
 
-	recipient.sendServerChannelInfo(s, RPL_ENDOFNAMES, ch.Name, "End of NAMES list")
+	recipient.sendServerTargetInfo(s, RPL_ENDOFNAMES, ch.Name, "End of NAMES list")
 }
