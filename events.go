@@ -398,7 +398,6 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 				if user, exists := users[e.Target]; exists {
 					user.sendMessage(e.Sender.Nick + " PRIVMSG " + user.Nick + " :" + e.Body)
 				} else {
-					// TODO: Send properly formatted ERR_NOSUCHNICK message
 					e.Sender.sendServerTargetInfo(s, ERR_NOSUCHNICK, e.Target, "No suck nick")
 				}
 			} else { // invalid target
