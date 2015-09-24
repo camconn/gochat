@@ -323,9 +323,12 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 			e.Sender.LastSeen = time.Now().Unix()
 
 			if len(e.Body) > 0 {
-				e.Sender.sendRaw("PONG " + s.Hostname + " :" + e.Body)
+				e.Sender.sendMessage(s.Hostname + " PONG " + s.Hostname + " :" + e.Body)
+			} else {
+				e.Sender.sendMessage(s.Hostname + " PONG " + s.Hostname + " :")
 			}
 		case PONG:
+			e.Sender.LastSeen = time.Now().Unix()
 			log.Println("Got PONG")
 		case MSG:
 			log.Println("Message event")
@@ -346,6 +349,7 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 			if !e.Valid {
 				// TODO: Send bad command text
+				continue
 			}
 
 			if ch, exists := channels[e.Target]; exists {
