@@ -285,9 +285,12 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 			u, exists := users[n]
 
-			if exists {
+			if exists && u != e.Sender {
 				log.Println("User already exists!")
 				e.Sender.sendServerMessage(s, ERR_NICKNAMEINUSE, "Nickname is already in use.")
+			} else if exists && u == e.Sender {
+				// if user is changing their nick to what their nick already is, then ignore
+				continue
 			} else {
 				if e.Sender.Nick != "" {
 					log.Println("User changed their nickname to", n)
