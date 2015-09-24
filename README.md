@@ -24,6 +24,10 @@ go build
 The configuration file for this program is found at `config.ini`. You can specify an 
 alternative MOTD file by either changing the `motd` option, or by editing `motd.txt` yourself.
 
+### Project Status
+
+For a near-complete list of the status of various features in this project, look in `TODO.md`.
+
 ### License
 
 This project is licensed under the GNU Public License, Version 3 or Later.
