@@ -268,9 +268,46 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 				}
 			}
 		case MODE:
-			// TODO: WTF does this even do?
 			log.Println("Mode event")
-			fmt.Printf("e.Body: %s\n", e.Body)
+
+			l := len(e.Target)
+
+			if l == 0 {
+				e.Sender.sendServerTargetInfo(s, ERR_NEEDMOREPARAMS, "MODE", "Need more parameters")
+				continue
+			}
+
+			if l > 1 && (e.Target[0] == '#' || e.Target[0] == '&') { // sending to channel
+				if ch, exists := channels[e.Target]; exists {
+					// Format is:
+					// :Server 324 nick #channel +modes
+					e.Sender.sendMessage(strings.Join([]string{
+						s.Hostname,
+						padNumeric(RPL_CHANNELMODEIS),
+						e.Sender.Nick,
+						e.Target,
+						"+" + ch.Mode,
+					}, SPACE))
+				} else {
+					e.Sender.sendServerTargetInfo(s, ERR_NOSUCHCHANNEL, e.Target, "No such channel")
+				}
+			} else if l > 1 { // sending to user
+				if user, exists := users[e.Target]; exists {
+					// Print user mode info
+					e.Sender.sendMessage(strings.Join([]string{
+						s.Hostname,
+						padNumeric(RPL_UMODEIS),
+						e.Sender.Nick,
+						e.Target,
+						"+" + user.Mode,
+					}, SPACE))
+				} else {
+					e.Sender.sendServerTargetInfo(s, ERR_NOSUCHNICK, e.Target, "No suck nick")
+				}
+			} else {
+				log.Println("I shouldn't be here!")
+			}
+
 		case NICK:
 			log.Println("User nick event")
 
@@ -338,17 +375,26 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 			if l > 1 && (e.Target[0] == '#' || e.Target[0] == '&') { // sending to channel
 				if c, exists := channels[e.Target]; exists {
-					// TODO: Check if user has joined channel
-					c.sendEvent(e.Sender, "PRIVMSG", e.Body)
+
+					i := binarySearch(strings.ToLower(e.Target), e.Sender.Channels)
+
+					restricted := c.hasMode(NO_EXTERNAL_MESSAGES)
+
+					if i == -1 && restricted {
+						e.Sender.sendServerTargetInfo(s, ERR_CANNOTSENDTOCHAN, e.Target,
+							"Cannot send to channel (you need to join first)")
+					} else {
+						c.sendEvent(e.Sender, "PRIVMSG", e.Body)
+					}
 				} else {
-					e.Sender.sendServerMessage(s, ERR_CANNOTSENDTOCHAN, "Cannot send to channel")
+					e.Sender.sendServerTargetInfo(s, ERR_CANNOTSENDTOCHAN, e.Target, "Cannot send to channel")
 				}
 			} else if l > 1 { // sending to user
 				if user, exists := users[e.Target]; exists {
 					user.sendMessage(e.Sender.Nick + " PRIVMSG " + user.Nick + " :" + e.Body)
 				} else {
 					// TODO: Send properly formatted ERR_NOSUCHNICK message
-					e.Sender.sendServerMessage(s, ERR_NOSUCHNICK, "No suck nick/channel")
+					e.Sender.sendServerTargetInfo(s, ERR_NOSUCHNICK, e.Target, "No suck nick")
 				}
 			} else { // invalid target
 				e.Sender.sendServerMessage(s, ERR_NORECIPIENT, "No recipient given (PRIVMSG)")

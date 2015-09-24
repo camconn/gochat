@@ -25,6 +25,10 @@ import (
 	"time"
 )
 
+const (
+	NO_EXTERNAL_MESSAGES = "n"
+)
+
 type Channel struct {
 	Name    string
 	Mode    string
@@ -37,7 +41,7 @@ type Channel struct {
 func NewChannel(name string) *Channel {
 	c := Channel{
 		Name:    name,
-		Mode:    "+",
+		Mode:    "n",
 		Topic:   "Default Topic",
 		Users:   list.New(),
 		Created: time.Now().Unix(),
@@ -110,4 +114,8 @@ func (ch *Channel) nameReply(s *ServerInfo, recipient *Client) {
 	}
 
 	recipient.sendServerTargetInfo(s, RPL_ENDOFNAMES, ch.Name, "End of NAMES list")
+}
+
+func (ch *Channel) hasMode(mode string) bool {
+	return strings.Index(ch.Mode, mode) != -1
 }

@@ -36,6 +36,7 @@ const (
 	RPL_CREATED          = 003
 	RPL_MYINFO           = 004
 	RPL_ISUPPORT         = 005
+	RPL_UMODEIS          = 221
 	RPL_CHANNELMODEIS    = 324
 	RPL_TOPIC            = 332
 	RPL_NAMREPLY         = 353
@@ -54,6 +55,7 @@ const (
 	ERR_ERRONEUSNICKNAME = 432
 	ERR_NICKNAMEINUSE    = 433
 	ERR_NOTONCHANNEL     = 442
+	ERR_NEEDMOREPARAMS   = 461
 )
 
 type ServerInfo struct {
