@@ -52,3 +52,6 @@
     - [ ] `USERS`
     - [ ] `WALLOPS`
     - [x] `MOTD`
+    - [ ] `HELP`
+    - [ ] `AUTH`
+    - [ ] `REGISTER`
