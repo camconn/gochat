@@ -7,10 +7,10 @@
 #                                               #
 #     You are running a default gochat config.  #
 # You can change this message by modifying your #
-# copy of `motd.txt`, or by specifiying another #
+# copy of `motd.txt`, or by specifying another  #
 # file in your configuration, which is found in #
 # `config.ini`.                                 #
 #                                               #
 #             https://github.com/camconn/gochat #
-#                    gochat Version 0.0.1-alpha #
+#                    gochat Version 0.0.2-alpha #
 #################################################
