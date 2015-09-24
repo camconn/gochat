@@ -39,6 +39,7 @@ const (
 	UNKNOWN = iota
 
 	CONNECT
+	HELP
 	JOIN
 	MODE
 	MOTD
@@ -50,8 +51,10 @@ const (
 	PONG
 	QUIT
 	REGISTERED
+	RULES
 	TOPIC
 	USER
+	VERSION_SERVER
 )
 
 const SPACE = " "
@@ -96,6 +99,12 @@ func NewEvent(cl *Client, raw string) *Event {
 	fmt.Printf("Words: %v\n", words)
 
 	switch command {
+	case "help":
+		e.Type = HELP
+
+		if len(words) >= 2 {
+			e.Body = strings.Trim(raw[start:], SPACE+COLON)
+		}
 	case "join":
 		e.Type = JOIN
 		e.Body = strings.Trim(raw[start:], SPACE)
@@ -170,6 +179,8 @@ func NewEvent(cl *Client, raw string) *Event {
 		if len(pair) == 2 {
 			e.Body = strings.Trim(pair[1], COLON+SPACE)
 		}
+	case "rules":
+		e.Type = RULES
 	case "topic":
 		e.Type = TOPIC
 
@@ -196,6 +207,8 @@ func NewEvent(cl *Client, raw string) *Event {
 			e.Valid = false
 			// TODO: Send invalid USER param code
 		}
+	case "version":
+		e.Type = VERSION_SERVER
 	default:
 		e.Type = UNKNOWN
 	}
@@ -214,6 +227,8 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 		fmt.Printf("Got event %v\n", e)
 
 		switch e.Type {
+		case HELP:
+			log.Println("Help event")
 		case JOIN:
 			log.Println("Join event")
 			chanPassPair := strings.Split(e.Body, SPACE)
@@ -406,6 +421,9 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 		case MOTD:
 			log.Println("MOTD event")
 			e.Sender.sendMotd(s)
+		case RULES:
+			log.Println("Rules event")
+			// TODO: Actualy send rules
 		case TOPIC:
 			// TODO: Check if user has permission to change topic
 			log.Println("TOPIC event")
@@ -461,6 +479,9 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 
 			// remove user from users map
 			delete(users, e.Sender.Nick)
+		case VERSION_SERVER:
+			log.Println("Version event")
+			e.Sender.sendVersion(s)
 		case UNKNOWN:
 		default:
 			e.Sender.sendServerMessage(s, ERR_UNKNOWNCOMMAND, "Unknown command")

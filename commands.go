@@ -26,3 +26,9 @@ import (
 func (cl *Client) Ping(s *ServerInfo) {
 	cl.sendRaw(":PING " + s.Hostname + " :LAG" + strconv.FormatInt(time.Now().Unix(), 10))
 }
+
+func (cl *Client) sendVersion(s *ServerInfo) {
+	cl.sendServerTargetInfo(s, RPL_VERSION,
+		"gochat version "+VERSION+" "+s.Hostname,
+		"(c) Copyright 2015 Camreon Conn; Licensed GNU Public License, Version 3 or Later")
+}

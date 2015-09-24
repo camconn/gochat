@@ -40,6 +40,7 @@ const (
 	RPL_CHANNELMODEIS    = 324
 	RPL_NOTOPIC          = 331
 	RPL_TOPIC            = 332
+	RPL_VERSION          = 351
 	RPL_NAMREPLY         = 353
 	RPL_ENDOFNAMES       = 366
 	RPL_MOTDSTART        = 375
