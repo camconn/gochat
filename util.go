@@ -71,6 +71,7 @@ type ServerInfo struct {
 // Search for a term in a sorted space. Returns the index
 // of the string if found. Returns -1 if not found
 // NB: To use this function, the array must be sorted
+// TODO: Return an error if term isn't in search space
 func binarySearch(term string, space []string) int {
 	// fmt.Printf("Array: %v\nSearch term: %s\n", space, term)
 	start := 0
@@ -97,6 +98,7 @@ func binarySearch(term string, space []string) int {
 			}
 		} else {
 			// wut happened here?
+			log.Println("Stuck in binary search. Please check conditionals")
 		}
 
 		if start >= mid && mid >= end {
@@ -120,6 +122,7 @@ func compareString(x, y string) int {
 
 // Reader server info from file and load it
 func loadConfig() *ServerInfo {
+	// TODO: Cleanup code using go-ini reflection
 	log.Println("Loading configuration from `config.ini`")
 	serverConfig := &ServerInfo{}
 	now := time.Now()
@@ -217,7 +220,6 @@ func (c *Client) sendMotd(s *ServerInfo) {
 		c.sendServerMessage(s, RPL_MOTD, line)
 	}
 	c.sendServerMessage(s, RPL_ENDOFMOTD, "End of MOTD command")
-
 }
 
 // pad a numeric to a length of 3 characters

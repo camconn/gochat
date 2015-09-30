@@ -61,9 +61,10 @@ const SPACE = " "
 const COLON = ":"
 const COMMA = ","
 
-// Match Alphanumeric for first character, and Alphanumeric along with: .[]()-
+// Match Alphanumeric for first character, and Alphanumeric for the rest
+// along with: .[]()-_
 // Max nick length: 16 characters
-const NICKREGEX = "^[A-Za-z0-9]([A-Za-z0-9\\.\\[\\]\\(\\)\\-]){0,15}$"
+const NICKREGEX = "^[A-Za-z0-9]([A-Za-z0-9\\.\\[\\]\\(\\)\\-\\_]){0,15}$"
 
 // Create a new Event from a sending client and the raw command string
 // The sole purpose of this function is the create an Event object and
@@ -469,7 +470,8 @@ func eventHandler(s *ServerInfo, events <-chan *Event) {
 		case QUIT:
 			log.Println("User quit event from ", e.Sender.Nick)
 
-			// close connections
+			// cleanup - disable all further messages and close connection.
+			e.Sender.Alive = false
 			e.Sender.Conn.Close()
 
 			for _, ch := range channels {

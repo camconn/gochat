@@ -39,7 +39,7 @@ type Client struct {
 	LastSeen   int64 // TODO: Update on PINGs, PRIVMSG, JOIN, etc.
 	Realname   string
 	Mode       string
-	Alive      bool
+	Alive      bool // NOTE: Is this even needed? It is hardly ever used
 	Registered bool
 }
 
@@ -47,11 +47,15 @@ func (c *Client) sendMessage(message string) {
 	c.sendRaw(":" + message)
 }
 
+// Send message to user and append CRLF to the end of the message.
+// Checks if user's connection is active as a double-check
 func (c *Client) sendRaw(message string) {
-	go func() {
-		log.Println(message)
-		c.Conn.Write([]byte(message + CRLF))
-	}()
+	go func(cl *Client) {
+		if cl.Alive {
+			log.Println(message)
+			c.Conn.Write([]byte(message + CRLF))
+		}
+	}(c)
 }
 
 // Send a simple server numeric message in the format of
@@ -90,6 +94,8 @@ func NewClient(connection net.Conn) Client {
 	return c
 }
 
+// Accept connections and hand off each new client to a separate
+// goroutine
 func networkHandler(s *ServerInfo) {
 	listener, err := net.Listen("tcp", ":6667")
 
@@ -110,7 +116,7 @@ func networkHandler(s *ServerInfo) {
 
 		cl := NewClient(conn)
 
-		// cloak user is there is a default cloak
+		// cloak user if there is a default cloak
 		if len(s.DefaultCloak) > 0 {
 			cl.Cloak = s.DefaultCloak
 		}
@@ -122,7 +128,7 @@ func networkHandler(s *ServerInfo) {
 func handleConnection(cl *Client, in chan string, events chan<- *Event) {
 	var bufferIn []byte
 	msgBuffer := make([]byte, 0)
-	log.Println("Now handling new connection")
+	log.Println("Now handling connection :" + cl.String())
 
 	for cl.Alive {
 		bufferIn = make([]byte, bufSize)

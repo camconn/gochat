@@ -31,6 +31,8 @@ func TestNickRegex(t *testing.T) {
 	testSet := []string{
 		"loooooooooongnick",
 		"cameron",
+		"coolaid_man",
+		"_underscore",
 		"2kool",
 		"camconn",
 		"lt",
@@ -47,6 +49,8 @@ func TestNickRegex(t *testing.T) {
 	knowns := []bool{
 		false,
 		true,
+		true,
+		false,
 		true,
 		true,
 		true,
