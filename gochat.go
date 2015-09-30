@@ -23,7 +23,6 @@ import (
 	"log"
 	"net"
 	"strings"
-	"sync"
 )
 
 const bufSize = 1400
@@ -38,7 +37,6 @@ type Client struct {
 	Username   string
 	Type       int
 	LastSeen   int64 // TODO: Update on PINGs, PRIVMSG, JOIN, etc.
-	WriteLock  *sync.Mutex
 	Realname   string
 	Mode       string
 	Alive      bool
@@ -51,10 +49,8 @@ func (c *Client) sendMessage(message string) {
 
 func (c *Client) sendRaw(message string) {
 	go func() {
-		c.WriteLock.Lock()
 		log.Println(message)
 		c.Conn.Write([]byte(message + CRLF))
-		c.WriteLock.Unlock()
 	}()
 }
 
@@ -86,10 +82,9 @@ func (c *Client) NoCloakString() string {
 func NewClient(connection net.Conn) Client {
 	log.Println("New client: ", connection.RemoteAddr().String())
 	c := Client{
-		Conn:      connection,
-		Cloak:     "",
-		Alive:     true,
-		WriteLock: &sync.Mutex{},
+		Conn:  connection,
+		Cloak: "",
+		Alive: true,
 	}
 
 	return c
