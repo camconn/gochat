@@ -63,6 +63,7 @@ const (
 type ServerInfo struct {
 	Hostname     string
 	Network      string
+	MotdPath     string
 	MotdData     []string
 	DefaultCloak string
 	started      *time.Time
@@ -120,45 +121,30 @@ func compareString(x, y string) int {
 	}
 }
 
-// Reader server info from file and load it
 func loadConfig() *ServerInfo {
-	// TODO: Cleanup code using go-ini reflection
 	log.Println("Loading configuration from `config.ini`")
-	serverConfig := &ServerInfo{}
+
+	serverConfig := new(ServerInfo)
+	cfg, err := ini.Load("config.ini")
+	if err != nil {
+		log.Fatal("Couldn't load config file")
+	}
+
+	err = cfg.Section("Server").MapTo(serverConfig)
+	if err != nil {
+		log.Println("Couldn't map configuration!")
+		log.Fatal(err)
+	}
+
 	now := time.Now()
 	serverConfig.started = &now
 
-	cfg, err := ini.Load("config.ini")
-	if err != nil {
-		log.Fatal("Couldn't read configuration file: ", err, "| exiting now...")
-	}
+	log.Println("Loading motd")
+	readMotd(serverConfig, serverConfig.MotdPath)
 
-	serverSec, err := cfg.GetSection("server")
-	if err != nil {
-		log.Fatal("Malformed configuration file: no \"server\" section")
-	}
-
-	serverConfig.Hostname = serverSec.Key("hostname").String()
-	if len(serverConfig.Hostname) == 0 {
-		log.Fatal("Invalid \"hostname\" key in [server]")
-	}
-
-	serverConfig.Network = serverSec.Key("network").String()
-	if len(serverConfig.Network) == 0 {
-		log.Fatal("Invalid \"network\" key in [server]")
-	}
-
-	serverConfig.DefaultCloak = strings.Trim(serverSec.Key("defaultcloak").String(), SPACE)
-
-	motdPath := serverSec.Key("motd").String()
-	if len(motdPath) == 0 {
-		log.Fatal("Invalid \"motd\" key in [server]")
-	}
-
-	readMotd(serverConfig, motdPath)
-
-	log.Println("Configuration Loaded")
+	log.Println("Configuration fully loaded")
 	return serverConfig
+
 }
 
 // read motd from file and write data to ServerInfo
