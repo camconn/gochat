@@ -33,6 +33,8 @@ For a near-complete list of the status of various features in this project, look
 This project is licensed under the GNU Public License, Version 3 or Later.
 A copy of this license can be found in `LICENSE.md`.
 
+All contributions to this project are to be licensed under this license.
+
 ### Disclosure
 
 This project was inspired by the [goircd](https://github.com/stargrave/goircd) project,
