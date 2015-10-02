@@ -22,77 +22,11 @@ import (
 	"bytes"
 	"log"
 	"net"
-	"strings"
 )
 
 const bufSize = 1400
 const CRLF = "\x0D\x0A"
 const VERSION = "0.0.2-alpha"
-
-type Client struct {
-	Conn       net.Conn
-	Cloak      string
-	Channels   []string
-	Nick       string
-	Username   string
-	Type       int
-	LastSeen   int64 // TODO: Update on PINGs, PRIVMSG, JOIN, etc.
-	Realname   string
-	Mode       string
-	Alive      bool // NOTE: Is this even needed? It is hardly ever used
-	Registered bool
-}
-
-func (c *Client) sendMessage(message string) {
-	c.sendRaw(":" + message)
-}
-
-// Send message to user and append CRLF to the end of the message.
-// Checks if user's connection is active as a double-check
-func (c *Client) sendRaw(message string) {
-	go func(cl *Client) {
-		if cl.Alive {
-			log.Println(message)
-			c.Conn.Write([]byte(message + CRLF))
-		}
-	}(c)
-}
-
-// Send a simple server numeric message in the format of
-// :HOSTNAME 123 USERNICK :MESSAGE
-func (c *Client) sendServerMessage(s *ServerInfo, numeric int, message string) {
-	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " :" + message)
-}
-
-// Send a user information (such as a topic, user list, or ERR_NOSUCHNICK error) about a
-// target, which can be either a Channel, Nickname, or Server
-func (c *Client) sendServerTargetInfo(s *ServerInfo, numeric int, target, message string) {
-	c.sendMessage(s.Hostname + " " + padNumeric(numeric) + " " + c.Nick + " " + target + " :" + message)
-}
-
-func (c *Client) String() string {
-	if len(c.Cloak) > 0 {
-		return c.Nick + "!" + c.Username + "@" + c.Cloak
-	} else {
-		return c.NoCloakString()
-	}
-}
-
-// Print out a user's nick, username, and host exposing personally-identifiable information
-func (c *Client) NoCloakString() string {
-	return c.Nick + "!" + c.Username + "@" + strings.Split(c.Conn.RemoteAddr().String(), COLON)[0]
-}
-
-func NewClient(connection net.Conn) Client {
-	log.Println("New client: ", connection.RemoteAddr().String())
-	c := Client{
-		Conn:  connection,
-		Cloak: "",
-		Alive: true,
-	}
-
-	return c
-}
 
 // Accept connections and hand off each new client to a separate
 // goroutine
